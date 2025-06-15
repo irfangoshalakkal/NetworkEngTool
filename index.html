@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Network Engineer Tools - Improved</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      cursor: pointer;
+      background: #f1f1f1;
+      border-radius: 4px 4px 0 0;
+      border: 1px solid #ddd;
+    }
+    .tab.active {
+      background: white;
+      border-bottom: none;
+      font-weight: bold;
+    }
+    .tool {
+      display: none;
+    }
+    .tool.active {
+      display: block;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    .copy-btn {
+      background: #28a745;
+      margin-top: 10px;
+    }
+    .copy-btn:hover {
+      background: #1e7e34;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Network Engineer's Tools By Irfan G</h1>
+    <p>ACL Builder & NAT Rule Generator</p>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('acl')">ACL Builder</div>
+      <div class="tab" onclick="switchTab('nat')">NAT Generator</div>
+    </div>
+
+    <!-- ACL Builder -->
+    <div class="tool active" id="acl">
+      <h2>ACL Builder</h2>
+      <label>Action:</label>
+      <select id="acl-action">
+        <option value="permit">Permit</option>
+        <option value="deny">Deny</option>
+      </select>
+
+      <label>Protocol:</label>
+      <select id="acl-protocol">
+        <option value="ip">IP</option>
+        <option value="tcp">TCP</option>
+        <option value="udp">UDP</option>
+        <option value="icmp">ICMP</option>
+      </select>
+
+      <label>Source IP:</label>
+      <input type="text" id="acl-src-ip" placeholder="e.g., 192.168.1.0">
+
+      <label>Source Wildcard Mask:</label>
+      <input type="text" id="acl-src-wc" placeholder="e.g., 0.0.0.255">
+
+      <label>Destination IP:</label>
+      <input type="text" id="acl-dst-ip" placeholder="e.g., 10.0.0.0">
+
+      <label>Destination Wildcard Mask:</label>
+      <input type="text" id="acl-dst-wc" placeholder="e.g., 0.0.0.255">
+
+      <button onclick="buildACL()">Generate ACL</button>
+      <button class="copy-btn" onclick="copyText('acl-output')">Copy to Clipboard</button>
+
+      <h3>Generated ACL:</h3>
+      <pre id="acl-output"></pre>
+    </div>
+
+    <!-- NAT Rule Generator -->
+    <div class="tool" id="nat">
+      <h2>NAT Rule Generator</h2>
+      <label>Inside Local IP:</label>
+      <input type="text" id="nat-inside-ip" placeholder="e.g., 192.168.1.10">
+
+      <label>Inside Global IP (Public IP):</label>
+      <input type="text" id="nat-outside-ip" placeholder="e.g., 203.0.113.10">
+
+      <label>Port (optional, for PAT):</label>
+      <input type="text" id="nat-port" placeholder="e.g., 8080">
+
+      <button onclick="buildNAT()">Generate NAT Rules</button>
+      <button class="copy-btn" onclick="copyText('nat-output')">Copy to Clipboard</button>
+
+      <h3>Generated NAT Rules:</h3>
+      <pre id="nat-output"></pre>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function buildACL() {
+      const action = document.getElementById('acl-action').value;
+      const protocol = document.getElementById('acl-protocol').value;
+      const srcIP = document.getElementById('acl-src-ip').value.trim();
+      const srcWC = document.getElementById('acl-src-wc').value.trim();
+      const dstIP = document.getElementById('acl-dst-ip').value.trim();
+      const dstWC = document.getElementById('acl-dst-wc').value.trim();
+
+      const aclLine = `access-list 100 ${action} ${protocol} ${srcIP} ${srcWC} ${dstIP} ${dstWC}`;
+      document.getElementById('acl-output').textContent = aclLine;
+    }
+
+    function buildNAT() {
+      const insideIP = document.getElementById('nat-inside-ip').value.trim();
+      const outsideIP = document.getElementById('nat-outside-ip').value.trim();
+      const port = document.getElementById('nat-port').value.trim();
+
+      let output = `! Cisco IOS Example:\n`;
+      if (port) {
+        output += `ip nat inside source static tcp ${insideIP} ${port} ${outsideIP} ${port}\n`;
+      } else {
+        output += `ip nat inside source static ${insideIP} ${outsideIP}\n`;
+      }
+
+      output += `\n! Fortinet Example:\n`;
+      if (port) {
+        output += `config firewall vip\n`;
+        output += `  edit "VIP_${insideIP}_${port}"\n`;
+        output += `    set extip ${outsideIP}\n`;
+        output += `    set extport ${port}\n`;
+        output += `    set mappedip ${insideIP}\n`;
+        output += `    set mappedport ${port}\n`;
+        output += `    set protocol tcp\n`;
+        output += `  next\n`;
+        output += `end\n`;
+      } else {
+        output += `config firewall vip\n`;
+        output += `  edit "VIP_${insideIP}"\n`;
+        output += `    set extip ${outsideIP}\n`;
+        output += `    set mappedip ${insideIP}\n`;
+        output += `  next\n`;
+        output += `end\n`;
+      }
+
+      output += `\n! Palo Alto Example:\n`;
+      output += `- Create a NAT rule:\n`;
+      output += `  - Original Packet: Source Zone: inside, Destination Zone: outside\n`;
+      output += `  - Destination Address: ${outsideIP}\n`;
+      output += `  - Translated Packet: Static IP: ${insideIP}\n`;
+      if (port) {
+        output += `  - Destination Port: ${port}\n`;
+      }
+
+      document.getElementById('nat-output').textContent = output;
+    }
+
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      }, () => {
+        alert('Copy failed!');
+      });
+    }
+  </script>
+
+</body>
+</html>
